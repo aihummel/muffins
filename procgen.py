@@ -1,5 +1,9 @@
 from fractions import Fraction
 
+# @author: Lexa
+
+# TODO by MON, input easy, email
+
 
 def main():
     text = \

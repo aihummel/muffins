@@ -1,5 +1,5 @@
 # muffins
-My code for the Muffin problem
+Some muffin code
 
 ### procgen.py
 where N, M, A, and B are constants and k is a variable...
