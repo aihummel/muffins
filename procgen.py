@@ -1,4 +1,4 @@
-from fractions import Fraction
+from fractions import Fraction as Fr
 
 # @author: Lexa
 
@@ -9,20 +9,20 @@ def main():
     text = \
         """
 f(%s,%s)
-
 f(%s,%s)=%s
-
 1. %s muffins divided (%s, %s)
-
 2. %s muffin divided (%s, %s)
-
 3. Give %s students %s shares of size %s
-
 4. Give %s students %s share of size %s and %s shares of size %s
 """
 
-    numbers1 = [Fraction(5), Fraction(4), Fraction(5), Fraction(4), Fraction(3, 8), Fraction(4), Fraction(3, 8), Fraction(5, 8), Fraction(1), Fraction(1, 2), Fraction(1, 2), Fraction(2), Fraction(2), Fraction(5, 8), Fraction(2), Fraction(1), Fraction(1, 2), Fraction(2), Fraction(3, 8)]
-    numbers2 = [Fraction(9), Fraction(4), Fraction(9), Fraction(4), Fraction(7, 16), Fraction(8), Fraction(7, 16), Fraction(9, 16), Fraction(1), Fraction(1, 2), Fraction(1, 2), Fraction(2), Fraction(4), Fraction(9, 16), Fraction(2), Fraction(1), Fraction(1, 2), Fraction(4), Fraction(7, 16)]
+    numbers1 = [Fr(5), Fr(4), Fr(5), Fr(4), Fr(3, 8), Fr(4), Fr(3, 8)]
+    numbers1.extend([Fr(5, 8), Fr(1), Fr(1, 2), Fr(1, 2), Fr(2), Fr(2)]) 
+    numbers1.extend([Fr(5, 8), Fr(2), Fr(1), Fr(1, 2), Fr(2), Fr(3, 8)])
+    
+    numbers2 = [Fr(9), Fr(4), Fr(9), Fr(4), Fr(7, 16), Fr(8), Fr(7, 16)] 
+    numbers2.extend([Fr(9, 16), Fr(1), Fr(1, 2), Fr(1, 2), Fr(2), Fr(4)]) 
+    numbers2.extend([Fr(9, 16), Fr(2), Fr(1), Fr(1, 2), Fr(4), Fr(7, 16)])
 
     proc1 = Proc(5, 4, text, numbers1)
     proc2 = Proc(9, 4, text, numbers2)
