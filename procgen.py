@@ -16,29 +16,28 @@ def main():
 #        """
 #$f(%s,%s)$
 #$f(%s,%s)=%s$
-#1. $%s$ muffins divided $(%s, %s)$.
+#1. %s muffins divided $(%s, %s)$.
 #2. %s muffin divided $(%s, %s)$.
-#3. Give %s students $%s$ shares of size $%s$.
-#4. Give %s students %s share of size $%s$ and $%s$ shares of size $%s$.
-#"""
+#3. Give %s students %s shares of size %s.
+#4. Give %s students %s share of size %s and %s shares of size %s.
+##"""
 #
 #    numbers1 = [Fr(5), Fr(4), Fr(5), Fr(4), Fr(3, 8), Fr(4), Fr(3, 8)]
 #    numbers1.extend([Fr(5, 8), Fr(1), Fr(1, 2), Fr(1, 2), Fr(2), Fr(2)]) 
 #    numbers1.extend([Fr(5, 8), Fr(2), Fr(1), Fr(1, 2), Fr(2), Fr(3, 8)])
 #    
-    numbers2 = [Fr(9), Fr(4), Fr(9), Fr(4), Fr(7, 16), Fr(8), Fr(7, 16)] 
-    numbers2.extend([Fr(9, 16), Fr(1), Fr(1, 2), Fr(1, 2), Fr(2), Fr(4)]) 
-    numbers2.extend([Fr(9, 16), Fr(2), Fr(1), Fr(1, 2), Fr(4), Fr(7, 16)])
+#    numbers2 = [Fr(9), Fr(4), Fr(9), Fr(4), Fr(7, 16), Fr(8), Fr(7, 16)] 
+#    numbers2.extend([Fr(9, 16), Fr(1), Fr(1, 2), Fr(1, 2), Fr(2), Fr(4)]) 
+#    numbers2.extend([Fr(9, 16), Fr(2), Fr(1), Fr(1, 2), Fr(4), Fr(7, 16)])
 #
-#    proc1 = Proc(5, 4, text, numbers1)
-#    proc2 = Proc(9, 4, text, numbers2)
+#    oproc1 = Proc(5, 4, text, numbers1)
+#    oproc2 = Proc(9, 4, text, numbers2)
     
-#    proc1 = parse_proc("proc1.tex")
+    proc1 = parse_proc("proc1.tex")
     proc2 = parse_proc("proc2.tex")
-    print()
-    print(numbers2)
-#    print(mkproc((proc1, proc2)))
-
+    
+#    print(mkproc((oproc1, oproc2)))
+    print(mkproc((proc1, proc2)))
 
 # Make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N).
 # ex_procs is tuple of two example f(N*k+M, N) Proc instances
@@ -219,12 +218,10 @@ def mkproc(ex_procs):
 
     return ex_procs[0].text % tuple(formulae)
 
-# Returns the index of the last character of s.
+# Returns the position of the last character of s in text.
 def my_index(text, s):
     return text.index(s) + len(s) - 1
-    
 
-# TODO
 # input: file w/ LaTeX source code of proc w/ numerical values (e.g. 5, 4/5) 
 # instead of formulae
 # output: Proc object
@@ -233,6 +230,8 @@ def parse_proc(proc_file):
 
     text = infile.read()
     orig = text
+    
+    # Removes enumerating numbers.
     to_remove = [str(s) for s in re.findall(r'\d+\.', text)]
     
     for s in to_remove:
@@ -241,29 +240,36 @@ def parse_proc(proc_file):
     nums = []
     str_nums = re.findall(r'\d+', text)
     
+    # Finds numbers in original text and determines what the fractions are.
     for s in str_nums:
-        if text[my_index(text, s) + 1] != '}':
-            text = text.replace(s, "", 1) 
-            nums.append(Fr(int(s)))
-        elif text[my_index(text, s) + 2] == '{':
-           # to_add = Fr(int(s), int(text[my_index(text, s) + 3: text[my_index(text, s) + 3 + len(s)])) Fix
-            nums.append(to_add)
+        if text[my_index(text, s) + 2] == '{':
+            num = text[my_index(text, s) + 3: my_index(text, s) + len(s) + 4]
+            num = num.replace("}", "")
+            to_add = Fr(int(s), int(num))
+            nums.append(to_add) 
             text = text.replace(s, "", 1) 
         elif text[my_index(text, s) + 1] == '}':
-            text = text.replace(s, "", 1)       
+            text = text.replace(s, "", 1) 
+        else:
+            text = text.replace(s, "", 1) 
+            nums.append(Fr(int(s)))
      
+    # Replaces numbers in original with placeholders.
     for s in str_nums:
         orig = orig.replace(s, "%s")
         
-    print()
-    print(nums)
+    for s in to_remove:
+        orig = orig.replace(s, "%s.")
         
     i = 1    
     while "%s." in orig:
         orig = orig.replace("%s.", str(i) + ".", 1)
         i = i + 1
         
-    proc = Proc(nums[0].numerator, nums[0].denominator, orig, nums) 
+    orig = orig.replace("\\frac{%s}{%s}", "%s")
+        
+    # Creates Proc object.
+    proc = Proc(nums[0].numerator, nums[1].numerator, orig, nums) 
     
     return proc
     
