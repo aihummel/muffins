@@ -42,6 +42,19 @@ def main():
     print(mkproc((proc1, proc2)))
 
 
+# input: file names for example procs
+# generates file with and prints general proc
+def get_general(file1, file2):
+    proc1 = parse_proc(file1)
+    proc2 = parse_proc(file2)
+    general_proc = mkproc((proc1, proc2))
+    filename = "generated_proc.tex"
+    f = open(filename, 'w')
+    f.write(general_proc)
+    f.close()
+    print(general_proc)
+
+
 # Make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N).
 # ex_procs is tuple of two example f(N*k+M, N) Proc instances
 # determine N, M, and ks
@@ -123,99 +136,98 @@ def mkproc(ex_procs):
         # insert string for formula accounting for cases of m and b
         formulae.append(formula_string(m_num, m_denom, b_num, b_denom))
 
-        # insert formulae
-
+    # insert formulae
     return ex_procs[0].text % tuple(formulae)
 
 
 # make string for formula accounting for cases of m and b
 def formula_string(m_num, m_denom, b_num, b_denom):
     if m_num == m_denom == 0 and b_denom == 1:  # b
-        return "$%d$" % b_num
+        return "%d" % b_num
     elif m_num == m_denom == 0 and b_denom > 0:  # b0/b1
-        return "$\\frac{%d}{%d}$" % (b_num, b_denom)
+        return "\\frac{%d}{%d}" % (b_num, b_denom)
     elif m_num != 0 and m_denom == 1 and b_num == b_denom == 0:  # m
-        return "$%d$" % m_num
+        return "%d" % m_num
     elif m_num != 0 and m_denom != 0 and b_num == b_denom == 0:  # m0/m1
-        return "$\\frac{%d}{%d}$" % (m_num, m_denom)
+        return "\\frac{%d}{%d}" % (m_num, m_denom)
     elif m_num == b_denom == 1 and m_denom == b_num == 0:  # k
-        return "$k$"
+        return "k"
     elif m_num == -b_denom == -1 and m_denom == b_num == 0:  # -k
-        return "$-k$"
+        return "-k"
     elif m_num == b_denom == 1 and m_denom == 0 and b_num > 0:  # k + b
-        return "$k + %d$" % b_num
+        return "k + %d" % b_num
     elif m_num == b_denom == 1 and m_denom == 0 and b_num < 0:  # k - b
-        return "$k - %d$" % -b_num
+        return "k - %d" % -b_num
     elif m_num == -b_denom == -1 and m_denom == 0 and b_num > 0:  # -k + b
-        return "$-k + %d$" % b_num
+        return "-k + %d" % b_num
     elif m_num == -b_denom == -1 and m_denom == 0 and b_num < 0:  # -k - b
-        return "$-k - %d$" % -b_num
+        return "-k - %d" % -b_num
     elif m_num not in (0, 1, -1) and m_denom == b_num == 0 and b_denom == 1:  # mk
-        return "$%dk$" % m_num
+        return "%dk" % m_num
     elif m_num not in (0, 1, -1) and m_denom == 0 and b_num > 0 and b_denom == 1:  # mk + b
-        return "$%dk + %d$" % (m_num, b_num)
+        return "%dk + %d" % (m_num, b_num)
     elif m_num not in (0, 1, -1) and m_denom == 0 and b_num < 0 and b_denom == 1:  # mk - b
-        return "$%dk - %d$" % (m_num, -b_num)
+        return "%dk - %d" % (m_num, -b_num)
     elif m_num == b_denom == 0 and m_denom == 1 and b_num != 0:  # b/k
-        return "$\\frac{%d}{k}$" % b_num
+        return "\\frac{%d}{k}" % b_num
     elif m_num == b_denom == 0 and m_denom > 0 and b_num != 0:  # b/mk
-        return "$\\frac{%d}{%dk}$" % (b_num, m_denom)
+        return "\\frac{%d}{%dk}" % (b_num, m_denom)
     elif m_num == 1 and m_denom == 0 and b_num > 0 and b_denom > 0:  # (k + b0)/b1
-        return "$\\frac{k + %d}{%d}$" % (b_num, b_denom)
+        return "\\frac{k + %d}{%d}" % (b_num, b_denom)
     elif m_num == 1 and m_denom == 0 and b_num < 0 < b_denom:  # (k - b0)/b1
-        return "$\\frac{k - %d}{%d}$" % (-b_num, b_denom)
+        return "\\frac{k - %d}{%d}" % (-b_num, b_denom)
     elif m_num == -1 and m_denom == 0 and b_num > 0 and b_denom > 0:  # (-k + b0)/b1
-        return "$\\frac{-k + %d}{%d}$" % (b_num, b_denom)
+        return "\\frac{-k + %d}{%d}" % (b_num, b_denom)
     elif m_num == -1 and m_denom == 0 and b_num < 0 < b_denom:  # (-k - b0)/b1
-        return "$\\frac{-k - %d}{%d}$" % (-b_num, b_denom)
+        return "\\frac{-k - %d}{%d}" % (-b_num, b_denom)
     elif m_num not in (0, -1, 1) and m_denom == 0 and b_num > 0 and b_denom > 0:  # (mk + b0)/b1
-        return "$\\frac{%dk + %d}{%d}$" % (m_num, b_num, b_denom)
+        return "\\frac{%dk + %d}{%d}" % (m_num, b_num, b_denom)
     elif m_num not in (0, -1, 1) and m_denom == 0 and b_num < 0 < b_denom:  # (mk - b0)/b1
-        return "$\\frac{%dk - %d}{%d}$" % (m_num, -b_num, b_denom)
+        return "\\frac{%dk - %d}{%d}" % (m_num, -b_num, b_denom)
     elif m_num != 0 and m_denom == 1 and b_num > 0 and b_denom == 0:  # m + b/k
-        return "$%d + \\frac{%d}{k}$" % (m_num, b_num)
+        return "%d + \\frac{%d}{k}" % (m_num, b_num)
     elif m_num != 0 and m_denom == 1 and b_num < 0 and b_denom == 0:  # m - b/k
-        return "$%d - \\frac{%d}{k}$" % (m_num, -b_num)
+        return "%d - \\frac{%d}{k}" % (m_num, -b_num)
     elif m_num != 0 and m_denom > 1 and b_num > 0 and b_denom == 0:  # (m0k + b)/m1k
-        return "$\\frac{%dk + %d}{%dk}$" % (m_num, b_num, m_denom)
+        return "\\frac{%dk + %d}{%dk}" % (m_num, b_num, m_denom)
     elif m_num != 0 and m_denom > 1 and b_num < 0 and b_denom == 0:  # (m0k - b)/m1k
-        return "$\\frac{%dk - %d}{%dk}$" % (m_num, -b_num, m_denom)
+        return "\\frac{%dk - %d}{%dk}" % (m_num, -b_num, m_denom)
     elif m_num == 0 and m_denom == 1 and b_num != 0 and b_denom > 0:  # b0/(k + b1)
-        return "$\\frac{%d}{k + %d}$" % (b_num, b_denom)
+        return "\\frac{%d}{k + %d}" % (b_num, b_denom)
     elif m_num == 0 and m_denom == 1 and b_num != 0 and b_denom < 0:  # b0/(k - b1)
-        return "$\\frac{%d}{k - %d}$" % (b_num, -b_denom)
+        return "\\frac{%d}{k - %d}" % (b_num, -b_denom)
     elif m_num == 0 and m_denom > 1 and b_num != 0 and b_denom > 0:  # b0/(mk + b1)
-        return "$\\frac{%d}{%dk + %d}$" % (b_num, m_denom, b_denom)
+        return "\\frac{%d}{%dk + %d}" % (b_num, m_denom, b_denom)
     elif m_num == 0 and m_denom > 1 and b_num != 0 and b_denom < 0:  # b0/(mk - b1)
-        return "$\\frac{%d}{%dk - %d}$" % (b_num, m_denom, -b_denom)
+        return "\\frac{%d}{%dk - %d}" % (b_num, m_denom, -b_denom)
     elif m_num == m_denom == 1 and b_num == 0 and b_denom > 0:  # k/(k + b)
-        return "$\\frac{k}{k + %d}$" % b_denom
+        return "\\frac{k}{k + %d}" % b_denom
     elif m_num == m_denom == 1 and b_num == 0 and b_denom < 0:  # k/(k - b)
-        return "$\\frac{k}{k - %d}$" % -b_denom
+        return "\\frac{k}{k - %d}" % -b_denom
     elif m_num == -m_denom == -1 and b_num == 0 and b_denom > 0:  # -k/(k + b)
-        return "$\\frac{-k}{k + %d}$" % b_denom
+        return "\\frac{-k}{k + %d}" % b_denom
     elif m_num == -m_denom == -1 and b_num == 0 and b_denom < 0:  # -k/(k - b)
-        return "$\\frac{-k}{k - %d}$" % -b_denom
+        return "\\frac{-k}{k - %d}" % -b_denom
     elif m_num == 1 and m_denom > 1 and b_num == 0 and b_denom > 0:  # k/(mk + b)
-        return "$\\frac{k}{%dk + %d}$" % (m_denom, b_denom)
+        return "\\frac{k}{%dk + %d}" % (m_denom, b_denom)
     elif m_num == 1 and m_denom > 1 and b_num == 0 and b_denom < 0:  # k/(mk - b)
-        return "$\\frac{k}{%dk - %d}$" % (m_denom, -b_denom)
+        return "\\frac{k}{%dk - %d}" % (m_denom, -b_denom)
     elif m_num == -1 and m_denom > 1 and b_num == 0 and b_denom > 0:  # -k/(mk + b)
-        return "$\\frac{-k}{%dk + %d}$" % (m_denom, b_denom)
+        return "\\frac{-k}{%dk + %d}" % (m_denom, b_denom)
     elif m_num == -1 and m_denom > 1 and b_num == 0 and b_denom < 0:  # -k/(mk - b)
-        return "$\\frac{-k}{%dk - %d}$" % (m_denom, -b_denom)
+        return "\\frac{-k}{%dk - %d}" % (m_denom, -b_denom)
     elif m_num not in (0, 1, -1) and m_denom > 1 and b_num == 0 and b_denom > 0:  # m0k/(m1k + b)
-        return "$\\frac{%dk}{%dk + %d}$" % (m_num, m_denom, b_denom)
+        return "\\frac{%dk}{%dk + %d}" % (m_num, m_denom, b_denom)
     elif m_num not in (0, 1, -1) and m_denom > 1 and b_num == 0 and b_denom < 0:  # m0k/(m1k - b)
-        return "$\\frac{%dk}{%dk - %d}$" % (m_num, m_denom, -b_denom)
+        return "\\frac{%dk}{%dk - %d}" % (m_num, m_denom, -b_denom)
     elif m_num not in (0, 1, -1) and m_denom > 1 and b_num > 0 and b_denom > 0:  # (m0k + b0)/(m1k + b1)
-        return "$\\frac{%dk + %d}{%dk + %d}$" % (m_num, b_num, m_denom, b_denom)
+        return "\\frac{%dk + %d}{%dk + %d}" % (m_num, b_num, m_denom, b_denom)
     elif m_num not in (0, 1, -1) and m_denom > 1 and b_num < 0 < b_denom:  # (m0k - b0)/(m1k + b1)
-        return "$\\frac{%dk - %d}{%dk + %d}$" % (m_num, -b_num, m_denom, b_denom)
+        return "\\frac{%dk - %d}{%dk + %d}" % (m_num, -b_num, m_denom, b_denom)
     elif m_num not in (0, 1, -1) and m_denom > 1 and b_denom < 0 < b_num:  # (m0k + b0)/(m1k - b1)
-        return "$\\frac{%dk + %d}{%dk - %d}$" % (m_num, b_num, m_denom, -b_denom)
+        return "\\frac{%dk + %d}{%dk - %d}" % (m_num, b_num, m_denom, -b_denom)
     elif m_num not in (0, 1, -1) and m_denom > 1 and b_num < 0 and b_denom < 0:  # (m0k - b0)/(m1k - b1)
-        return "$\\frac{%dk - %d}{%dk - %d}$" % (m_num, -b_num, m_denom, -b_denom)
+        return "\\frac{%dk - %d}{%dk - %d}" % (m_num, -b_num, m_denom, -b_denom)
 
 
 # Returns the index of the last character of s.
