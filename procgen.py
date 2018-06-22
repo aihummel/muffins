@@ -1,42 +1,53 @@
 from fractions import Fraction as Fr
+import re
 
 
 # @author: Lexa
 
 # TODO by MON, input easy, email
+class Proc:
+    def __init__(self, m, s, text, numbers):
+        self.m = m
+        self.s = s
+        self.text = text
+        self.numbers = numbers
 
 
 def main():
-    text = \
-        """
-f(%s,%s)
-f(%s,%s)=%s
-1. %s muffins divided (%s, %s)
-2. %s muffin divided (%s, %s)
-3. Give %s students %s shares of size %s
-4. Give %s students %s share of size %s and %s shares of size %s
-"""
-
-    numbers1 = [Fr(5), Fr(4), Fr(5), Fr(4), Fr(3, 8), Fr(4), Fr(3, 8)]
-    numbers1.extend([Fr(5, 8), Fr(1), Fr(1, 2), Fr(1, 2), Fr(2), Fr(2)])
-    numbers1.extend([Fr(5, 8), Fr(2), Fr(1), Fr(1, 2), Fr(2), Fr(3, 8)])
-
+    #    text = \
+    #        """
+    # $f(%s,%s)$
+    # $f(%s,%s)=%s$
+    # 1. $%s$ muffins divided $(%s, %s)$.
+    # 2. %s muffin divided $(%s, %s)$.
+    # 3. Give %s students $%s$ shares of size $%s$.
+    # 4. Give %s students %s share of size $%s$ and $%s$ shares of size $%s$.
+    # """
+    #
+    #    numbers1 = [Fr(5), Fr(4), Fr(5), Fr(4), Fr(3, 8), Fr(4), Fr(3, 8)]
+    #    numbers1.extend([Fr(5, 8), Fr(1), Fr(1, 2), Fr(1, 2), Fr(2), Fr(2)])
+    #    numbers1.extend([Fr(5, 8), Fr(2), Fr(1), Fr(1, 2), Fr(2), Fr(3, 8)])
+    #
     numbers2 = [Fr(9), Fr(4), Fr(9), Fr(4), Fr(7, 16), Fr(8), Fr(7, 16)]
     numbers2.extend([Fr(9, 16), Fr(1), Fr(1, 2), Fr(1, 2), Fr(2), Fr(4)])
     numbers2.extend([Fr(9, 16), Fr(2), Fr(1), Fr(1, 2), Fr(4), Fr(7, 16)])
+    #
+    #    proc1 = Proc(5, 4, text, numbers1)
+    #    proc2 = Proc(9, 4, text, numbers2)
 
-    proc1 = Proc(5, 4, text, numbers1)
-    proc2 = Proc(9, 4, text, numbers2)
-    print(mkproc((proc1, proc2)))
+    #    proc1 = parse_proc("proc1.tex")
+    proc2 = parse_proc("proc2.tex")
+    print()
+    print(numbers2)
 
 
-# TODO make proc for f(N*k+j, N) given procs for f(N*k+A, N) and f(N*k+B, N)
-# AAAAAaaaAAAaaAAAaAHHHhhhHHhhHhhHHHHHHh
+#    print(mkproc((proc1, proc2)))
 
-# make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N)
+
+# Make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N).
+# ex_procs is tuple of two example f(N*k+M, N) Proc instances
+# determine N, M, and ks
 def mkproc(ex_procs):
-    # ex_procs is tuple of two example f(N*k+M, N) Proc instances
-    # determine N, M, and k's
     assert ex_procs[0].s == ex_procs[1].s
     N = ex_procs[0].s
     assert ex_procs[0].m % N == ex_procs[1].m % N
@@ -44,7 +55,7 @@ def mkproc(ex_procs):
     k0 = (ex_procs[0].m - M) / N
     k1 = (ex_procs[1].m - M) / N
 
-    # fit linear equations for each n=mk+b (num. and denom. separate)
+    # Fit linear equations for each n=mk+b (num. and denom. separate)
     assert ex_procs[0].text == ex_procs[1].text
     formulae = []
     for i in range(len(ex_procs[0].numbers)):
@@ -55,7 +66,7 @@ def mkproc(ex_procs):
         m_denom = (n1.denominator - n0.denominator) / (k1 - k0)
         b_denom = n0.denominator - m_denom * k0
 
-        # make coefficients integers
+        # Make coefficients integers
         if int(m_num) != m_num:
             m_num_frac = Fr(m_num)
             d = m_num_frac.denominator
@@ -98,7 +109,7 @@ def mkproc(ex_procs):
         # check if numerator is multiple of denominator
         if m_num == m_denom == 0 or b_num == b_denom == 0 or \
                 (m_denom != 0 and b_denom != 0 and m_num / m_denom == b_num / b_denom):
-            frac = Fr(b_num/b_denom) if m_denom == 0 else Fr(m_num/m_denom)
+            frac = Fr(b_num / b_denom) if m_denom == 0 else Fr(m_num / m_denom)
             m_num = 0
             m_denom = 0
             b_num = frac.numerator
@@ -114,8 +125,8 @@ def mkproc(ex_procs):
         # insert string for formula accounting for cases of m and b
         formulae.append(formula_string(m_num, m_denom, b_num, b_denom))
 
-    # insert formulae
-    # print(formulae)
+        # insert formulae
+
     return ex_procs[0].text % tuple(formulae)
 
 
@@ -209,51 +220,81 @@ def formula_string(m_num, m_denom, b_num, b_denom):
         return "$\\frac{%dk - %d}{%dk - %d}$" % (m_num, -b_num, m_denom, -b_denom)
 
 
+# Returns the index of the last character of s.
+def my_index(text, s):
+    return text.index(s) + len(s) - 1
+
+
 # TODO
-# input: file w/ LaTeX source code of proc w/ numerical values (e.g. 5, 4/5) instead of formulae
+# input: file w/ LaTeX source code of proc w/ numerical values (e.g. 5, 4/5)
+# instead of formulae
 # output: Proc object
 def parse_proc(proc_file):
-    # prox_txt is str: name of file
     infile = open(proc_file)
 
     text = infile.read()
+    orig = text
+    to_remove = [str(s) for s in re.findall(r'\d+\.', text)]
 
-    # read m and s
-    function_start = text.find("f")
-    open_paren = text[function_start:].find("(") + function_start
-    comma = text[open_paren:].find(",") + open_paren
-    close_paren = text[comma:].find(")") + comma
-    m = text[open_paren + 1:comma].strip()
-    assert m.isdigit()
-    m = int(m)
-    s = text[comma + 1:close_paren].strip()
-    assert s.isdigit()
-    s = int(s)
+    for s in to_remove:
+        text = text.replace(s, "")
 
-    # isolate number values and format text
-    # assumes fractions are formatted \frac{a}{b} with no space
-    i = 0
-    numbers = []
-    while i < len(text):
-        if text[i].isdigit():
-            j = i + 1
-            while text[j].isdigit():
-                j += 1
-            if i > 0 and text[i - 7:i - 1] == r"\frac{" and text[j:j + 2] == "}{" and text[j + 2].isdigit():
-                k = text[j + 3:].find("}") + j + 3
+    nums = []
+    str_nums = re.findall(r'\d+', text)
 
-        else:
-            i += 1
+    for s in str_nums:
+        if text[my_index(text, s) + 1] != '}':
+            text = text.replace(s, "", 1)
+            nums.append(Fr(int(s)))
+        elif text[my_index(text, s) + 2] == '{':
+            # to_add = Fr(int(s), int(text[my_index(text, s) + 3: text[my_index(text, s) + 3 + len(s)])) Fix
+            nums.append(to_add)
+            text = text.replace(s, "", 1)
+        elif text[my_index(text, s) + 1] == '}':
+            text = text.replace(s, "", 1)
+
+    for s in str_nums:
+        orig = orig.replace(s, "%s")
+
+    print()
+    print(nums)
+
+    i = 1
+    while "%s." in orig:
+        orig = orig.replace("%s.", str(i) + ".", 1)
+        i = i + 1
+
+    proc = Proc(nums[0].numerator, nums[0].denominator, orig, nums)
+
+    return proc
 
 
-class Proc:
-    def __init__(self, m, s, text, numbers):
-        self.m = m
-        self.s = s
-        # self.y = y
-        self.text = text
-        self.numbers = numbers
-
+#    # read m and s
+#    function_start = text.find("f")
+#    open_paren = text[function_start:].find("(") + function_start
+#    comma = text[open_paren:].find(",") + open_paren
+#    close_paren = text[comma:].find(")") + comma
+#    m = text[open_paren+1:comma].strip()
+#    assert m.isdigit()
+#    m = int(m)
+#    s = text[comma+1:close_paren].strip()
+#    assert s.isdigit()
+#    s = int(s)
+#
+#    # isolate number values and format text
+#    # assumes fractions are formatted \frac{a}{b} with no space
+#    i = 0
+#    numbers = []
+#    while i < len(text):
+#        if text[i].isdigit():
+#            j = i + 1
+#            while text[j].isdigit():
+#                j += 1
+#            if i > 0 and text[i-7:i-1] == r"\frac{" and text[j:j+2] == "}{" and text[j+2].isdigit():
+#                k = text[j+3:].find("}") + j+3
+#
+#        else:
+#            i += 1
 
 if __name__ == "__main__":
     main()
