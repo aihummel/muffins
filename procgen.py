@@ -35,15 +35,17 @@ def main():
     # oproc1 = Proc(5, 4, text, numbers1)
     # oproc2 = Proc(9, 4, text, numbers2)
 
-    proc1 = parse_proc("proc1.tex")
-    proc2 = parse_proc("proc2.tex")
+    # proc1 = parse_proc("proc1.tex")
+    # proc2 = parse_proc("proc2.tex")
+    #
+    # # print(mkproc((oproc1, oproc2)))
+    # print(mkproc((proc1, proc2)))
 
-    # print(mkproc((oproc1, oproc2)))
-    print(mkproc((proc1, proc2)))
+    print(get_general("proc1.tex", "proc2.tex"))
 
 
 # input: file names for example procs
-# generates file with and prints general proc
+# generates file with and returns general proc
 def get_general(file1, file2):
     proc1 = parse_proc(file1)
     proc2 = parse_proc(file2)
@@ -52,7 +54,7 @@ def get_general(file1, file2):
     f = open(filename, 'w')
     f.write(general_proc)
     f.close()
-    print(general_proc)
+    return general_proc
 
 
 # Make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N).
@@ -244,42 +246,51 @@ def parse_proc(proc_file):
     text = infile.read()
     orig = text
 
-    # Removes enumerating numbers.
-    to_remove = [str(s) for s in re.findall(r'\d+\.', text)]
+    # # Removes enumerating numbers.
+    # to_remove = [str(s) for s in re.findall(r'\d+\.', text)]
+    #
+    # for s in to_remove:
+    #     text = text.replace(s, "")
 
-    for s in to_remove:
-        text = text.replace(s, "")
-
-    nums = []
-    str_nums = re.findall(r'\d+', text)
+    # Captures isolated numbers  and fractions
+    # str_nums = re.findall(r'\d+', text)
+    str_nums = re.findall(r'\d+[^\w}.\]]|\\frac{\d+}{\d+}', text)
+    # str_nums = [''.join(tup) for tup in str_nums]
 
     # Finds numbers in original text and determines what the fractions are.
+    nums = []
     for s in str_nums:
-        if text[my_index(text, s) + 2] == '{':
-            num = text[my_index(text, s) + 3: my_index(text, s) + len(s) + 4]
-            num = num.replace("}", "")
-            to_add = Fr(int(s), int(num))
+        # if text[my_index(text, s) + 2] == '{':
+        if '\\frac' in s:
+            # num = text[my_index(text, s) + 3: my_index(text, s) + len(s) + 4]
+            # num = num.replace("}", "")
+            (num, denom) = tuple(re.findall(r'{(\d+)}', s))
+            # to_add = Fr(int(s), int(num))
+            to_add = Fr(int(num), int(denom))
             nums.append(to_add)
             text = text.replace(s, "", 1)
-        elif text[my_index(text, s) + 1] == '}':
-            text = text.replace(s, "", 1)
+            # elif text[my_index(text, s) + 1] == '}':
+            #     text = text.replace(s, "", 1)
         else:
-            text = text.replace(s, "", 1)
-            nums.append(Fr(int(s)))
+            # text = text.replace(s, "", 1)
+            # nums.append(Fr(int(s)))
+            text = text.replace(s, s[-1], 1)
+            nums.append(Fr(int(s[:-1])))
 
     # Replaces numbers in original with placeholders.
     for s in str_nums:
-        orig = orig.replace(s, "%s")
+        # orig = orig.replace(s, "%s")
+        orig = orig.replace(s, "%s") if '\\frac' in s else orig.replace(s, "%s"+s[-1])
 
-    for s in to_remove:
-        orig = orig.replace(s, "%s.")
+    # for s in to_remove:
+    #     orig = orig.replace(s, "%s.")
 
-    i = 1
-    while "%s." in orig:
-        orig = orig.replace("%s.", str(i) + ".", 1)
-        i = i + 1
+    # i = 1
+    # while "%s." in orig:
+    #     orig = orig.replace("%s.", str(i) + ".", 1)
+    #     i = i + 1
 
-    orig = orig.replace("\\frac{%s}{%s}", "%s")
+    # orig = orig.replace("\\frac{%s}{%s}", "%s")
 
     # Creates Proc object.
     proc = Proc(nums[0].numerator, nums[1].numerator, orig, nums)
