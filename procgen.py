@@ -39,6 +39,7 @@ def main():
     proc2 = parse_proc("proc2.tex")
 
     # print(mkproc((oproc1, oproc2)))
+    print(mkproc((proc1, proc2)))
 
 
 # Make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N).
@@ -222,7 +223,6 @@ def my_index(text, s):
     return text.index(s) + len(s) - 1
 
 
-# TODO
 # input: file w/ LaTeX source code of proc w/ numerical values (e.g. 5, 4/5)
 # instead of formulae
 # output: Proc object
