@@ -215,12 +215,6 @@ def formula_string(m_num, m_denom, b_num, b_denom):
     elif m_num not in (0, 1, -1) and m_denom > 1 and b_num < 0 and b_denom < 0:  # (m0k - b0)/(m1k - b1)
         return "\\frac{%dk-%d}{%dk-%d}" % (m_num, -b_num, m_denom, -b_denom)
 
-
-# Returns the index of the last character of s.
-def my_index(text, s):
-    return text.index(s) + len(s) - 1
-
-
 # input: file w/ LaTeX source code of proc w/ numerical values (e.g. 5, 4/5)
 # instead of formulae
 # output: Proc object
@@ -230,57 +224,29 @@ def parse_proc(proc_file):
     text = infile.read()
     orig = text
 
-    # # Removes enumerating numbers.
-    # to_remove = [str(s) for s in re.findall(r'\d+\.', text)]
-    #
-    # for s in to_remove:
-    #     text = text.replace(s, "")
-
-    # Captures isolated numbers  and fractions
-    # str_nums = re.findall(r'\d+', text)
+    # Captures isolated numbers  and fractions.
     str_nums = re.findall(r'\d+[^\w}.\]]|\\frac{\d+}{\d+}', text)
-    # str_nums = [''.join(tup) for tup in str_nums]
 
     # Finds numbers in original text and determines what the fractions are.
     nums = []
     for s in str_nums:
-        # if text[my_index(text, s) + 2] == '{':
         if '\\frac' in s:
-            # num = text[my_index(text, s) + 3: my_index(text, s) + len(s) + 4]
-            # num = num.replace("}", "")
             (num, denom) = tuple(re.findall(r'{(\d+)}', s))
-            # to_add = Fr(int(s), int(num))
             to_add = Fr(int(num), int(denom))
             nums.append(to_add)
             text = text.replace(s, "", 1)
-            # elif text[my_index(text, s) + 1] == '}':
-            #     text = text.replace(s, "", 1)
         else:
-            # text = text.replace(s, "", 1)
-            # nums.append(Fr(int(s)))
             text = text.replace(s, s[-1], 1)
             nums.append(Fr(int(s[:-1])))
 
     # Replaces numbers in original with placeholders.
     for s in str_nums:
-        # orig = orig.replace(s, "%s")
         orig = orig.replace(s, "%s") if '\\frac' in s else orig.replace(s, "%s"+s[-1])
-
-    # for s in to_remove:
-    #     orig = orig.replace(s, "%s.")
-
-    # i = 1
-    # while "%s." in orig:
-    #     orig = orig.replace("%s.", str(i) + ".", 1)
-    #     i = i + 1
-
-    # orig = orig.replace("\\frac{%s}{%s}", "%s")
 
     # Creates Proc object.
     proc = Proc(nums[0].numerator, nums[1].numerator, orig, nums)
 
     return proc
-
 
 #    # read m and s
 #    function_start = text.find("f")
