@@ -4,7 +4,6 @@ import re
 
 # @author: Lexa
 
-# TODO by MON, input easy, email
 class Proc:
     def __init__(self, m, s, text, numbers):
         self.m = m
@@ -49,8 +48,8 @@ def mkproc(ex_procs):
     N = ex_procs[0].s
     assert ex_procs[0].m % N == ex_procs[1].m % N
     M = ex_procs[0].m % N
-    k0 = (ex_procs[0].m - M) / N
-    k1 = (ex_procs[1].m - M) / N
+    k0 = int((ex_procs[0].m - M) / N)
+    k1 = int((ex_procs[1].m - M) / N)
 
     # Fit linear equations for each n=mk+b (num. and denom. separate)
     assert ex_procs[0].text == ex_procs[1].text
@@ -58,40 +57,40 @@ def mkproc(ex_procs):
     for i in range(len(ex_procs[0].numbers)):
         n0 = ex_procs[0].numbers[i]
         n1 = ex_procs[1].numbers[i]
-        m_num = (n1.numerator - n0.numerator) / (k1 - k0)
-        b_num = n0.numerator - m_num * k0
-        m_denom = (n1.denominator - n0.denominator) / (k1 - k0)
-        b_denom = n0.denominator - m_denom * k0
+        m_num = Fr(n1.numerator - n0.numerator, k1 - k0)
+        b_num = Fr(n0.numerator - m_num.numerator * k0, m_num.denominator)
+        m_denom = Fr(n1.denominator - n0.denominator, k1 - k0)
+        b_denom = Fr(n0.denominator - m_denom.numerator * k0, m_denom.denominator)
 
         # Make coefficients integers
-        if int(m_num) != m_num:
-            m_num_frac = Fr(m_num)
-            d = m_num_frac.denominator
+        if m_num.denominator != 1:
+            d = m_num.denominator
             m_num *= d
             b_num *= d
             m_denom *= d
             b_denom *= d
-        if int(b_num) != b_num:
-            b_num_frac = Fr(b_num)
-            d = b_num_frac.denominator
+        if b_num.denominator != 1:
+            d = b_num.denominator
             m_num *= d
             b_num *= d
             m_denom *= d
             b_denom *= d
-        if int(m_denom) != m_denom:
-            m_denom_frac = Fr(m_denom)
-            d = m_denom_frac.denominator
+        if m_denom.denominator != 1:
+            d = m_denom.denominator
             m_num *= d
             b_num *= d
             m_denom *= d
             b_denom *= d
-        if int(b_denom) != b_denom:
-            b_denom_frac = Fr(b_denom)
-            d = b_denom_frac.denominator
+        if b_denom.denominator != 1:
+            d = b_denom.denominator
             m_num *= d
             b_num *= d
             m_denom *= d
             b_denom *= d
+        m_num = int(m_num)
+        b_num = int(b_num)
+        m_denom = int(m_denom)
+        b_denom = int(b_denom)
 
         # divide any common multiple
         factor = min(val for val in [m_num, m_denom, b_num, b_denom] if val != 0)
@@ -102,6 +101,7 @@ def mkproc(ex_procs):
                 b_num /= factor
                 b_denom /= factor
                 break
+            factor = min(val for val in [m_num, m_denom, b_num, b_denom, factor-1] if val != 0)
 
         # check if numerator is multiple of denominator
         if m_num == m_denom == 0 or b_num == b_denom == 0 or \
@@ -215,6 +215,7 @@ def formula_string(m_num, m_denom, b_num, b_denom):
     elif m_num not in (0, 1, -1) and m_denom > 1 and b_num < 0 and b_denom < 0:  # (m0k - b0)/(m1k - b1)
         return "\\frac{%dk-%d}{%dk-%d}" % (m_num, -b_num, m_denom, -b_denom)
 
+
 # input: file w/ LaTeX source code of proc w/ numerical values (e.g. 5, 4/5)
 # instead of formulae
 # output: Proc object
@@ -247,6 +248,7 @@ def parse_proc(proc_file):
     proc = Proc(nums[0].numerator, nums[1].numerator, orig, nums)
 
     return proc
+
 
 #    # read m and s
 #    function_start = text.find("f")
