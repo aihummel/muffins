@@ -58,9 +58,15 @@ def mkproc(ex_procs):
         n0 = ex_procs[0].numbers[i]
         n1 = ex_procs[1].numbers[i]
         m_num = Fr(n1.numerator - n0.numerator, k1 - k0)
-        b_num = Fr(n0.numerator - m_num.numerator * k0, m_num.denominator)
+        b_num = Fr(n0.numerator * m_num.denominator - m_num.numerator * k0, m_num.denominator)
         m_denom = Fr(n1.denominator - n0.denominator, k1 - k0)
-        b_denom = Fr(n0.denominator - m_denom.numerator * k0, m_denom.denominator)
+        b_denom = Fr(n0.denominator * m_denom.denominator - m_denom.numerator * k0, m_denom.denominator)
+
+        # print("n", n0, n1)
+        # print("k", k0, k1)
+        # print(m_num, b_num)
+        # print(m_denom, b_denom)
+        # print()
 
         # Make coefficients integers
         if m_num.denominator != 1:
