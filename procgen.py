@@ -301,5 +301,60 @@ def format_tex(subsection_heading, result_line, instructions):
     return text
 
 
+# input: file with only "give students" lines
+# output: text of full file
+# use to prepare "give"-only files for use with the normal proc generation methods
+def part_input(proc_file):
+    infile = open(proc_file)
+    text = infile.read()
+    infile.close()
+
+    # find:
+    # no muffins for each piece size pair
+    # min share size
+    # m, s, f(m, s)
+
+    divisions = {}  # str for size pair : number of muffins divided
+    solution = float("inf")
+    m = 0
+    s = 0
+
+    # record values for each "give" instruction
+    give_strs = [give[0] for give in re.findall(r" ((\d+)(.*\[\d+:(\\frac{\d+}{\d+}|\d+)\])+)", text)]
+    for give in give_strs:
+        no_recipients = int(give[:give.find(" ")])
+
+        s += no_recipients
+        if m == 0:
+            m0 = no_recipients
+
+        muffin_dists = re.findall(r"(\[\d+:(\\frac{\d+}{\d+}|\d+)\])", give)
+        for dist in muffin_dists:
+            no_shares = int(dist[0][1:dist.find(":")])
+            share_size = Fr(*re.findall(r"\d+", dist[1])) if dist[1][0] == "\\" else int(dist[1])
+
+            # update values
+            size_pair = "(" + dist[1]
+            if dist[1] != "1":
+                num, denom = share_size.denominator - share_size.numerator, share_size.denominator
+                size_pair += ",\\frac{" + str(num) + "}{" + denom + "}"
+            size_pair += ")"
+            divisions[size_pair] = divisions[size_pair] + no_shares if size_pair in divisions else no_shares
+            solution = min(solution, share_size)
+            if m == 0:
+                m0 *= no_shares * share_size
+        if m == 0:
+            m = m0
+
+    # write header
+    subsection_heading = "f(" + str(m) + "," + str(s) + ")"
+    result_line = "$" + subsection_heading + r" = \frac{" + solution.numerator + "}{" + solution.denominator + "}$"
+
+    # make "divide" instruction for each division in dictionary, append "gives" and number appropriately TODO
+    instructions = ""
+
+    return format_tex(subsection_heading, result_line, instructions)
+
+
 if __name__ == "__main__":
     main()
