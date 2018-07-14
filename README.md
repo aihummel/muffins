@@ -7,7 +7,7 @@ where N, M, A, and B are constants and k is a variable...
 
 Given a procedure for f(NA + M, N) and f(NB + M, N), generates procedure for f(Nk + M, N)
 
-##### usage:
+#### usage:
 run get_general(file1, file2) where file1 and file2 are strings containing the filenames for specific procedures
 
 ### re_proc.py
