@@ -18,7 +18,9 @@ def main():
     #
     # print(mkproc((proc1, proc2)))
 
-    print(get_general("proc1.tex", "proc2.tex"))
+    # print(get_general("proc1.tex", "proc2.tex"))
+
+    print(part_input("proc1.tex"))
 
     # instructions = r"1. $4k$ muffins divided $(\frac{4k-1}{8k},\frac{4k+1}{8k})$", \
     #                r"2. $1$ muffin divided $(\frac{1}{2},\frac{1}{2})$", \
@@ -320,26 +322,33 @@ def part_input(proc_file):
     s = 0
 
     # record values for each "give" instruction
-    give_strs = [give[0] for give in re.findall(r" ((\d+)(.*\[\d+:(\\frac{\d+}{\d+}|\d+)\])+)", text)]
+    give_strs = re.findall(r" ((\d+)(.*\[\d+:(\\frac{\d+}{\d+}|\d+)\])+)", text)
     for give in give_strs:
-        no_recipients = int(give[:give.find(" ")])
+        no_recipients = int(give[1])
 
         s += no_recipients
         if m == 0:
             m0 = no_recipients
 
-        muffin_dists = re.findall(r"(\[\d+:(\\frac{\d+}{\d+}|\d+)\])", give)
+        muffin_dists = re.findall(r"(\[\d+:(\\frac{\d+}{\d+}|\d+)\])", give[0])
         for dist in muffin_dists:
-            no_shares = int(dist[0][1:dist.find(":")])
-            share_size = Fr(*re.findall(r"\d+", dist[1])) if dist[1][0] == "\\" else int(dist[1])
+            no_shares = int(dist[0][1:dist[0].find(":")])
+            share_size = Fr(*(int(x) for x in re.findall(r"\d+", dist[1]))) if dist[1][0] == "\\" else int(dist[1])
 
-            # update values
-            size_pair = "(" + dist[1]
-            if dist[1] != "1":
-                num, denom = share_size.denominator - share_size.numerator, share_size.denominator
-                size_pair += ",\\frac{" + str(num) + "}{" + denom + "}"
+            # update divisions
+            size_pair = "("
+            if dist[1] == "1":
+                size_pair += dist[1]
+            else:
+                num1 = share_size.numerator
+                denom = share_size.denominator
+                num2 = denom - num1
+                size_pair += "\\frac{" + str(min(num1, num2)) + "}{" + str(denom) + "}," \
+                             "\\frac{" + str(max(num1, num2)) + "}{" + str(denom) + "}"
             size_pair += ")"
             divisions[size_pair] = divisions[size_pair] + no_shares if size_pair in divisions else no_shares
+
+            # update solution, m
             solution = min(solution, share_size)
             if m == 0:
                 m0 *= no_shares * share_size
@@ -348,10 +357,20 @@ def part_input(proc_file):
 
     # write header
     subsection_heading = "f(" + str(m) + "," + str(s) + ")"
-    result_line = "$" + subsection_heading + r" = \frac{" + solution.numerator + "}{" + solution.denominator + "}$"
+    result_line = "$" + str(subsection_heading) + r" = \frac{" + str(solution.numerator)\
+                  + "}{" + str(solution.denominator) + "}$"
 
-    # make "divide" instruction for each division in dictionary, append "gives" and number appropriately TODO
-    instructions = ""
+    # make "divide" instruction for each division in dictionary
+    instructions = []
+    i = 1
+    for key, value in divisions.items():
+        instructions.append(str(i) + ". $" + str(value) + "$ muffins divided $" + key + "$")
+        i += 1
+
+    # append "gives"
+    for give in give_strs:
+        instructions.append(str(i) + ". Give " + give[0] + "$")
+        i += 1
 
     return format_tex(subsection_heading, result_line, instructions)
 
