@@ -18,9 +18,10 @@ def main():
     #
     # print(mkproc((proc1, proc2)))
 
+    print(get_general_give_only("proc1.tex", "proc2.tex"))
     # print(get_general("proc1.tex", "proc2.tex"))
 
-    print(part_input("proc1.tex"))
+    # print(part_input("proc1.tex"))
 
     # instructions = r"1. $4k$ muffins divided $(\frac{4k-1}{8k},\frac{4k+1}{8k})$", \
     #                r"2. $1$ muffin divided $(\frac{1}{2},\frac{1}{2})$", \
@@ -34,6 +35,21 @@ def main():
 def get_general(file1, file2):
     proc1 = parse_proc(file1)
     proc2 = parse_proc(file2)
+    general_proc = mkproc((proc1, proc2))
+    filename = "generated_proc.tex"
+    f = open(filename, 'w')
+    f.write(general_proc)
+    f.close()
+    return general_proc
+
+
+# input: file names for give-only example procs
+# generates file with and returns general proc
+def get_general_give_only(file1, file2):
+    text1 = part_input(file1)
+    text2 = part_input(file2)
+    proc1 = parse_proc(text=text1)
+    proc2 = parse_proc(text=text2)
     general_proc = mkproc((proc1, proc2))
     filename = "generated_proc.tex"
     f = open(filename, 'w')
@@ -224,13 +240,13 @@ def formula_string(m_num, m_denom, b_num, b_denom):
         return "\\frac{%dk-%d}{%dk-%d}" % (m_num, -b_num, m_denom, -b_denom)
 
 
-# input: file w/ LaTeX source code of proc w/ numerical values (e.g. 5, 4/5)
+# input: file w/ LaTeX source code of proc w/ numerical values (e.g. 5, 4/5) OR string of source code
 # instead of formulae
 # output: Proc object
-def parse_proc(proc_file):
-    infile = open(proc_file)
-
-    text = infile.read()
+def parse_proc(proc_file=None, text=None):
+    if proc_file is not None:
+        infile = open(proc_file)
+        text = infile.read()
     orig = text
 
     # Captures isolated numbers  and fractions.
@@ -288,10 +304,10 @@ def parse_proc(proc_file):
 # takes changing components of a procedure and outputs full LaTeX
 # idk may be useful at some point
 def format_tex(subsection_heading, result_line, instructions):
-    header = "\\documentclass[a4paper]{article}\n\n% Language and font encodings\n" \
+    header = "\\documentclass[a4paper]{article}\n\n%% Language and font encodings\n" \
         "\\usepackage[english]{babel}\n\\usepackage[utf8x]{inputenc}\n\\usepackage[T1]{fontenc}\n\n" \
         "\\setlength{\\parindent}{4em}\n\\setlength{\\parskip}{1em}\n" \
-        "\\renewcommand{\\baselinestretch}{1}\n\n% Sets page size and margins\n" \
+        "\\renewcommand{\\baselinestretch}{1}\n\n%% Sets page size and margins\n" \
         "\\usepackage[a4paper,top=3cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry}\n\n" \
         "\\begin{document}"
     footer = "\\end{document}"
