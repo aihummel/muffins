@@ -325,10 +325,7 @@ def part_input(proc_file):
     give_strs = re.findall(r" ((\d+)(.*\[\d+:(\\frac{\d+}{\d+}|\d+)\])+)", text)
     for give in give_strs:
         no_recipients = int(give[1])
-
         s += no_recipients
-        if m == 0:
-            m0 = no_recipients
 
         muffin_dists = re.findall(r"(\[\d+:(\\frac{\d+}{\d+}|\d+)\])", give[0])
         for dist in muffin_dists:
@@ -346,14 +343,22 @@ def part_input(proc_file):
                 size_pair += "\\frac{" + str(min(num1, num2)) + "}{" + str(denom) + "}," \
                              "\\frac{" + str(max(num1, num2)) + "}{" + str(denom) + "}"
             size_pair += ")"
-            divisions[size_pair] = divisions[size_pair] + no_shares if size_pair in divisions else no_shares
+            if size_pair in divisions:
+                divisions[size_pair] += no_recipients * no_shares
+            else:
+                divisions[size_pair] = no_recipients * no_shares
 
-            # update solution, m
+            # update solution
             solution = min(solution, share_size)
-            if m == 0:
-                m0 *= no_shares * share_size
-        if m == 0:
-            m = m0
+
+    # find m
+    give = give_strs[0]
+    muffin_dists = re.findall(r"(\[\d+:(\\frac{\d+}{\d+}|\d+)\])", give[0])
+    no_shares_list = [int(dist[0][1:dist[0].find(":")]) for dist in muffin_dists]
+    share_size_list = [Fr(*(int(x) for x in re.findall(r"\d+", dist[1]))) if dist[1][0] == "\\" else int(dist[1])
+                       for dist in muffin_dists]
+    m_over_s = sum(no_shares_list[i] * share_size_list[i] for i in range(len(no_shares_list)))
+    m = m_over_s * s
 
     # write header
     subsection_heading = "f(" + str(m) + "," + str(s) + ")"
@@ -363,7 +368,15 @@ def part_input(proc_file):
     # make "divide" instruction for each division in dictionary
     instructions = []
     i = 1
-    for key, value in divisions.items():
+    keys = list(divisions.keys())
+    keys.sort()
+    while keys[0] == "(1)":
+        keys.append(keys[0])
+        del keys[0]
+    for key in keys:
+        value = divisions[key]
+        if key != "(1)":
+            value = int(value/2)
         instructions.append(str(i) + ". $" + str(value) + "$ muffins divided $" + key + "$")
         i += 1
 
