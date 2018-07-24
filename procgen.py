@@ -1,6 +1,8 @@
 from fractions import Fraction as Fr
+from itertools import product
+from itertools import repeat
+import numpy as np
 import re
-
 
 # @author: Lexa
 
