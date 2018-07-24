@@ -13,22 +13,22 @@ class Proc:
 
 
 def main():
-    # proc1 = parse_proc("proc1.tex")
-    # proc2 = parse_proc("proc2.tex")
-    #
-    # print(mkproc((proc1, proc2)))
-
-    print(get_general_give_only("proc1.tex", "proc2.tex"))
-    # print(get_general("proc1.tex", "proc2.tex"))
-
-    # print(part_input("proc1.tex"))
-
+#    print(get_general_give_only("proc1.tex", "proc2.tex"))
+    
+    # s1 = 2(3) + 4
+    # s2 = 2(3) + 4
+    # s3 = 2(5)
+    # s4 = 2(5)
+    print(find_proc(5, 4, Fr(3,8), 2))
+#    print(find_proc(11, 6, Fr(7,18), 2))
+    
+    # Todo: format output, test with other inputs, and use fixed students
+    
     # instructions = r"1. $4k$ muffins divided $(\frac{4k-1}{8k},\frac{4k+1}{8k})$", \
     #                r"2. $1$ muffin divided $(\frac{1}{2},\frac{1}{2})$", \
     #                r"3. Give 2 students $2k$ shares of size $\frac{4k+1}{8k}$", \
     #                r"4. Give 2 students 1 share of size $\frac{1}{2}$ and $2k$ shares of size $\frac{4k-1}{8k}$"
     # print(format_tex("f(4k+1,4)", r"$f(4k+1,4) = \frac{4k-1}{8k}$ for $k > 0$:", instructions))
-
 
 # input: file names for example procs
 # generates file with and returns general proc
@@ -41,7 +41,6 @@ def get_general(file1, file2):
     f.write(general_proc)
     f.close()
     return general_proc
-
 
 # input: file names for give-only example procs
 # generates file with and returns general proc
@@ -57,6 +56,55 @@ def get_general_give_only(file1, file2):
     f.close()
     return general_proc
 
+# helper function that returns linear combinations that sum to the value
+def combo(arr, val):
+    coeffs = [i for i in range(len(arr))]
+    cstr = ""
+    
+    for i in coeffs:
+        cstr += str(i)
+    
+    res = list(product(cstr, repeat = len(arr)))
+    res = list(map(lambda x: list(x), res))
+    res = list(map(lambda x: list(map(lambda y: int(y), x)), res))  
+    
+    good_coeffs = []
+    combos = []
+    
+    b = np.array(arr)
+    for a in res:
+        if np.dot(np.array(a), b) == val:
+            good_coeffs.append(a)
+    
+    for i in good_coeffs:
+        res = []
+    
+        for j in range(len(arr)):
+            res += list(repeat(arr[j], i[j]))
+            
+        combos.append(res)
+    
+    return combos
+
+# input: muffins, students, fc fraction, number of "fixed" students
+def find_proc(m, s, fc, fixed):
+    whole = fc.denominator 
+    total = m*(fc.denominator/s) # sum of shares of any student
+    interval = list(range(fc.numerator, whole - fc.numerator + 1))
+    combos = sorted(combo(interval, total)) # lists that each sum to total
+    shares = [combos[0]]
+    
+    full_total = total*s
+
+    j = 0    
+    while sum([sum(x) for x in shares]) < full_total :
+        for i in combos:
+            if (whole - shares[j][0]) in i:
+                shares.append(i)
+                j += 1
+                break
+    
+    return sorted(shares)
 
 # Make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N).
 # ex_procs is tuple of two example f(N*k+M, N) Proc instances
@@ -272,34 +320,6 @@ def parse_proc(proc_file=None, text=None):
     proc = Proc(nums[0].numerator, nums[1].numerator, orig, nums)
 
     return proc
-
-
-#    # read m and s
-#    function_start = text.find("f")
-#    open_paren = text[function_start:].find("(") + function_start
-#    comma = text[open_paren:].find(",") + open_paren
-#    close_paren = text[comma:].find(")") + comma
-#    m = text[open_paren+1:comma].strip()
-#    assert m.isdigit()
-#    m = int(m)
-#    s = text[comma+1:close_paren].strip()
-#    assert s.isdigit()
-#    s = int(s)
-#
-#    # isolate number values and format text
-#    # assumes fractions are formatted \frac{a}{b} with no space
-#    i = 0
-#    numbers = []
-#    while i < len(text):
-#        if text[i].isdigit():
-#            j = i + 1
-#            while text[j].isdigit():
-#                j += 1
-#            if i > 0 and text[i-7:i-1] == r"\frac{" and text[j:j+2] == "}{" and text[j+2].isdigit():
-#                k = text[j+3:].find("}") + j+3
-#
-#        else:
-#            i += 1
 
 # takes changing components of a procedure and outputs full LaTeX
 # idk may be useful at some point
