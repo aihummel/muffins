@@ -1,6 +1,7 @@
 from fractions import Fraction as Fr
 from itertools import product
 from itertools import repeat
+from itertools import groupby
 import numpy as np
 import re
 
@@ -22,9 +23,12 @@ def main():
     # s3 = 2(5)
     # s4 = 2(5)
     print(find_proc(5, 4, Fr(3,8), 2))
+#    print(find_proc(9, 4, Fr(7,16), 2))
 #    print(find_proc(11, 6, Fr(7,18), 2))
+#    print(find_proc(7, 3, Fr(5,12), 1))
+#    print(find_proc(31, 13, Fr(21,52), 3))
     
-    # Todo: format output, test with other inputs, and use fixed students
+    # Todo: format output, make more memory efficient
     
     # instructions = r"1. $4k$ muffins divided $(\frac{4k-1}{8k},\frac{4k+1}{8k})$", \
     #                r"2. $1$ muffin divided $(\frac{1}{2},\frac{1}{2})$", \
@@ -60,15 +64,11 @@ def get_general_give_only(file1, file2):
 
 # helper function that returns linear combinations that sum to the value
 def combo(arr, val):
-    coeffs = [i for i in range(len(arr))]
-    cstr = ""
-    
-    for i in coeffs:
-        cstr += str(i)
-    
-    res = list(product(cstr, repeat = len(arr)))
+    max_coeff = int(val/arr[0]) + 1
+    coeffs = [i for i in range(max_coeff)]
+         
+    res = list(product(coeffs, repeat = len(arr)))
     res = list(map(lambda x: list(x), res))
-    res = list(map(lambda x: list(map(lambda y: int(y), x)), res))  
     
     good_coeffs = []
     combos = []
@@ -91,22 +91,36 @@ def combo(arr, val):
 # input: muffins, students, fc fraction, number of "fixed" students
 def find_proc(m, s, fc, fixed):
     whole = fc.denominator 
-    total = m*(fc.denominator/s) # sum of shares of any student
+    total = int(m*(fc.denominator/s)) # sum of shares of any student
     interval = list(range(fc.numerator, whole - fc.numerator + 1))
     combos = sorted(combo(interval, total)) # lists that each sum to total
-    shares = [combos[0]]
     
-    full_total = total*s
-
-    j = 0    
-    while sum([sum(x) for x in shares]) < full_total :
-        for i in combos:
-            if (whole - shares[j][0]) in i:
-                shares.append(i)
-                j += 1
-                break
+    fixed_shares = [] # list that contains only the upper or lower share size
+    for i in combos:
+        if sum(i) % i[0] == 0:
+            fixed_shares = i
+            break
     
-    return sorted(shares)
+    shares = list(repeat(fixed_shares, fixed))
+    combos.remove(fixed_shares)
+    
+    all_procs = list(product(combos, repeat = (s - fixed)))
+    all_procs = sorted(list(map(lambda x: sorted(x), all_procs)))
+    all_procs = list(all_procs for all_procs,_ in groupby(all_procs))
+    
+    for res in all_procs:
+        res += shares
+        flat_res = sorted([val for sublist in res for val in sublist])
+        
+        flag = True
+        
+        for i in range(len(flat_res)):
+            if flat_res[i] + flat_res[len(flat_res) - i - 1] != whole:
+                flag = False
+                
+        if flag == True:
+            return res
+    
 
 # Make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N).
 # ex_procs is tuple of two example f(N*k+M, N) Proc instances
