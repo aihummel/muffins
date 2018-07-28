@@ -1,9 +1,8 @@
 from fractions import Fraction as Fr
-from itertools import product
-from itertools import repeat
-from itertools import groupby
+import itertools as it
 import numpy as np
 import re
+import gc
 
 # @author: Lexa
 
@@ -22,13 +21,14 @@ def main():
     # s2 = 2(3) + 4
     # s3 = 2(5)
     # s4 = 2(5)
-    print(find_proc(5, 4, Fr(3,8), 2))
+#    print(find_proc(5, 4, Fr(3,8), 2))
 #    print(find_proc(9, 4, Fr(7,16), 2))
 #    print(find_proc(11, 6, Fr(7,18), 2))
 #    print(find_proc(7, 3, Fr(5,12), 1))
-#    print(find_proc(31, 13, Fr(21,52), 3))
+    print(find_proc(31, 13, Fr(21,52), 3))
     
-    # Todo: format output, make more memory efficient
+    # Todo: format output, make more memory efficient (split code into 
+    # more functions)
     
     # instructions = r"1. $4k$ muffins divided $(\frac{4k-1}{8k},\frac{4k+1}{8k})$", \
     #                r"2. $1$ muffin divided $(\frac{1}{2},\frac{1}{2})$", \
@@ -64,53 +64,65 @@ def get_general_give_only(file1, file2):
 
 # helper function that returns linear combinations that sum to the value
 def combo(arr, val):
-    max_coeff = int(val/arr[0]) + 1
-    coeffs = [i for i in range(max_coeff)]
-         
-    res = list(product(coeffs, repeat = len(arr)))
-    res = list(map(lambda x: list(x), res))
+    max_coeff = int(val/arr[0]) 
     
-    good_coeffs = []
+    cstr = ''.join(str(i) for i in range(max_coeff))
+         
+    res = tuple(it.product(cstr, repeat = len(arr)))  
+
+    to_add = np.zeros((len(arr),), dtype = np.int32)
+    to_add[0] = max_coeff 
+    to_add = ''.join(str(x) for x in to_add)
+    
+    res += (to_add,)
+    
+    good_coeffs = ()
     combos = []
     
     b = np.array(arr)
     for a in res:
-        if np.dot(np.array(a), b) == val:
-            good_coeffs.append(a)
-    
+        a_list = tuple(map(lambda x: int(x), tuple(a)))
+        if np.dot(np.array(a_list), b) == val:
+            good_coeffs += (a_list,)
+                 
     for i in good_coeffs:
-        res = []
+        shares = ()
     
         for j in range(len(arr)):
-            res += list(repeat(arr[j], i[j]))
+            shares += tuple(it.repeat(arr[j], i[j]))
             
-        combos.append(res)
+        combos += (shares,)
     
     return combos
 
 # input: muffins, students, fc fraction, number of "fixed" students
 def find_proc(m, s, fc, fixed):
     whole = fc.denominator 
-    total = int(m*(fc.denominator/s)) # sum of shares of any student
-    interval = list(range(fc.numerator, whole - fc.numerator + 1))
-    combos = sorted(combo(interval, total)) # lists that each sum to total
+    total = int(m*(whole/s)) # sum of shares of any student
+    interval = tuple(range(fc.numerator, whole - fc.numerator + 1))
+    combos = combo(interval, total) # lists that each sum to total
+    combos.sort()
     
-    fixed_shares = [] # list that contains only the upper or lower share size
-    for i in combos:
-        if sum(i) % i[0] == 0:
-            fixed_shares = i
-            break
+    fixed_shares = () # list that contains only the upper or lower share size
+    last = combos[len(combos) - 1]
     
-    shares = list(repeat(fixed_shares, fixed))
+    if sum(combos[0]) % combos[0][0] == 0:
+        fixed_shares = combos[0]
+    elif sum(last) % last[0] == 0:
+        fixed_shares = last
+    
+    shares = tuple(it.repeat(fixed_shares, fixed))
+    
     combos.remove(fixed_shares)
     
-    all_procs = list(product(combos, repeat = (s - fixed)))
-    all_procs = sorted(list(map(lambda x: sorted(x), all_procs)))
-    all_procs = list(all_procs for all_procs,_ in groupby(all_procs))
-    
+    all_procs = list(it.product(combos, repeat = (s - fixed)))
+    all_procs.sort()
+    all_procs = tuple(all_procs for all_procs,_ in it.groupby(all_procs))
+     
     for res in all_procs:
         res += shares
-        flat_res = sorted([val for sublist in res for val in sublist])
+        flat_res = [val for sublist in res for val in sublist]
+        flat_res.sort()
         
         flag = True
         
@@ -120,7 +132,6 @@ def find_proc(m, s, fc, fixed):
                 
         if flag == True:
             return res
-    
 
 # Make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N).
 # ex_procs is tuple of two example f(N*k+M, N) Proc instances
