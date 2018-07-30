@@ -2,7 +2,6 @@ from fractions import Fraction as Fr
 import itertools as it
 import numpy as np
 import re
-import gc
 
 # @author: Lexa
 
@@ -17,18 +16,16 @@ class Proc:
 def main():
 #    print(get_general_give_only("proc1.tex", "proc2.tex"))
     
-    # s1 = 2(3) + 4
-    # s2 = 2(3) + 4
-    # s3 = 2(5)
-    # s4 = 2(5)
-#    print(find_proc(5, 4, Fr(3,8), 2))
+    # [Fr(5), Fr(4), Fr(5), Fr(4), Fr(3, 8), Fr(4), Fr(3, 8), Fr(5, 8), 
+    # Fr(1), Fr(1, 2), Fr(1, 2), Fr(2), Fr(2), Fr(5, 8), Fr(2), Fr(1), 
+    # Fr(1, 2), Fr(2), Fr(3, 8)] 
+    print(find_proc(5, 4, Fr(3,8), 2)) 
 #    print(find_proc(9, 4, Fr(7,16), 2))
 #    print(find_proc(11, 6, Fr(7,18), 2))
 #    print(find_proc(7, 3, Fr(5,12), 1))
-    print(find_proc(31, 13, Fr(21,52), 3))
+#    print(find_proc(31, 13, Fr(21,52), 3)) # this one takes around 10 minutes
     
-    # Todo: format output, make more memory efficient (split code into 
-    # more functions)
+    # Todo: format output
     
     # instructions = r"1. $4k$ muffins divided $(\frac{4k-1}{8k},\frac{4k+1}{8k})$", \
     #                r"2. $1$ muffin divided $(\frac{1}{2},\frac{1}{2})$", \
@@ -76,15 +73,20 @@ def combo(arr, val):
     
     res += (to_add,)
     
+    res = iter(res)
     good_coeffs = ()
     combos = []
     
     b = np.array(arr)
-    for a in res:
-        a_list = tuple(map(lambda x: int(x), tuple(a)))
-        if np.dot(np.array(a_list), b) == val:
-            good_coeffs += (a_list,)
-                 
+            
+    while True:
+        try:
+            a_list = tuple(map(lambda x: int(x), tuple(next(res))))
+            if np.dot(np.array(a_list), b) == val:
+                good_coeffs += (a_list,)
+        except StopIteration:
+            break
+        
     for i in good_coeffs:
         shares = ()
     
@@ -95,14 +97,8 @@ def combo(arr, val):
     
     return combos
 
-# input: muffins, students, fc fraction, number of "fixed" students
-def find_proc(m, s, fc, fixed):
-    whole = fc.denominator 
-    total = int(m*(whole/s)) # sum of shares of any student
-    interval = tuple(range(fc.numerator, whole - fc.numerator + 1))
-    combos = combo(interval, total) # lists that each sum to total
-    combos.sort()
-    
+# helper 
+def get_all_procs(s, fixed, combos):
     fixed_shares = () # list that contains only the upper or lower share size
     last = combos[len(combos) - 1]
     
@@ -111,27 +107,43 @@ def find_proc(m, s, fc, fixed):
     elif sum(last) % last[0] == 0:
         fixed_shares = last
     
-    shares = tuple(it.repeat(fixed_shares, fixed))
+    shares = iter(it.repeat(fixed_shares, fixed))
     
     combos.remove(fixed_shares)
     
-    all_procs = list(it.product(combos, repeat = (s - fixed)))
-    all_procs.sort()
-    all_procs = tuple(all_procs for all_procs,_ in it.groupby(all_procs))
+    all_procs = iter(it.product(combos, repeat = int((s - fixed))))
+    
+    return (all_procs, shares)
+
+# input: muffins, students, fc fraction, number of "fixed" students
+def find_proc(m, s, fc, fixed):
+    whole = fc.denominator 
+    total = int(m*(whole/s)) # sum of shares of any student
+    interval = tuple(range(fc.numerator, whole - fc.numerator + 1))
+    combos = combo(interval, total) # lists that each sum to total
+    combos.sort()
+    
+    (all_procs, shares) = get_all_procs(s, fixed, combos) 
+    shares = tuple(shares)
+    combos = None
      
-    for res in all_procs:
-        res += shares
-        flat_res = [val for sublist in res for val in sublist]
-        flat_res.sort()
-        
-        flag = True
-        
-        for i in range(len(flat_res)):
-            if flat_res[i] + flat_res[len(flat_res) - i - 1] != whole:
-                flag = False
-                
-        if flag == True:
-            return res
+    while True:
+        try:
+            res = list(next(all_procs))
+            res += shares
+            flat_res = [val for sublist in res for val in sublist]
+            flat_res.sort()
+            
+            flag = True
+            
+            for i in range(len(flat_res)):
+                if flat_res[i] + flat_res[len(flat_res) - i - 1] != whole:
+                    flag = False
+                    
+            if flag == True:
+                return res
+        except StopIteration:
+            break
 
 # Make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N).
 # ex_procs is tuple of two example f(N*k+M, N) Proc instances
