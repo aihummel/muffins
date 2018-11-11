@@ -1,7 +1,7 @@
 from fractions import Fraction as Fr
 import itertools as it
-import numpy as np
 import re
+import time
 
 # @author: Lexa
 
@@ -19,13 +19,20 @@ def main():
     # [Fr(5), Fr(4), Fr(5), Fr(4), Fr(3, 8), Fr(4), Fr(3, 8), Fr(5, 8), 
     # Fr(1), Fr(1, 2), Fr(1, 2), Fr(2), Fr(2), Fr(5, 8), Fr(2), Fr(1), 
     # Fr(1, 2), Fr(2), Fr(3, 8)] 
-    print(find_proc(5, 4, Fr(3,8), 2)) 
+    t = time.time()
+#    print(find_proc(5, 4, Fr(3,8), 2)) 
 #    print(find_proc(9, 4, Fr(7,16), 2))
 #    print(find_proc(11, 6, Fr(7,18), 2))
 #    print(find_proc(7, 3, Fr(5,12), 1))
-#    print(find_proc(31, 13, Fr(21,52), 3)) # this one takes around 10 minutes
+#    print(find_proc(8, 3, Fr(4,9), 1))
+#    print(find_proc(13, 10, Fr(7,20), 4))
+    print(find_proc(31, 13, Fr(21,52), 3)) #466 seconds to <1 second!!
+#    print(find_proc(21, 5, Fr(7,15), 2))
+#    print(find_proc(34, 15, Fr(13,30), 7))
+#    print(find_proc(32, 13, Fr(5,13), 6))
+#    print(find_proc(59, 33, Fr(40,99), 16))
     
-    # Todo: format output
+    print(time.time() - t)
     
     # instructions = r"1. $4k$ muffins divided $(\frac{4k-1}{8k},\frac{4k+1}{8k})$", \
     #                r"2. $1$ muffin divided $(\frac{1}{2},\frac{1}{2})$", \
@@ -59,92 +66,150 @@ def get_general_give_only(file1, file2):
     f.close()
     return general_proc
 
-# helper function that returns linear combinations that sum to the value
-def combo(arr, val):
-    max_coeff = int(val/arr[0]) 
+def symmetric_pairs(size, pairs, pairwise):
+    if size == 2:
+        return pairs
     
-    cstr = ''.join(str(i) for i in range(max_coeff))
-         
-    res = tuple(it.product(cstr, repeat = len(arr)))  
-
-    to_add = np.zeros((len(arr),), dtype = np.int32)
-    to_add[0] = max_coeff 
-    to_add = ''.join(str(x) for x in to_add)
+    new_pairs = []
     
-    res += (to_add,)
-    
-    res = iter(res)
-    good_coeffs = ()
-    combos = []
-    
-    b = np.array(arr)
+    for pair in pairs:
+        i = len(pair)//2 - 1
+        sub_pair = pair[i: i+2]
+        j = pairwise.index(sub_pair)
+        
+        new_pairwise = pairwise[j: len(pairwise)]
+        
+        for p in new_pairwise:
+            to_add = []
+            to_add += pair
+            to_add += p
+            to_add.sort()
+            new_pairs.append(to_add)
             
-    while True:
-        try:
-            a_list = tuple(map(lambda x: int(x), tuple(next(res))))
-            if np.dot(np.array(a_list), b) == val:
-                good_coeffs += (a_list,)
-        except StopIteration:
-            break
+    return symmetric_pairs(size - 2, new_pairs, pairwise)
+
+def one_is_in(combos, i):
+    for c in combos:
+        if set(c).issubset(set(i)):
+            return True
+    
+    return False
+
+def combos_helper(s, method, vals, methods):
+    for i in vals:
+        if s < i:
+            continue
+        
+        j = method[i]
+        method[i] = j + 1
+        
+        if s > i:
+            combos_helper(s - i, method, vals, methods)
+        else:
+            new_m = []
+            new_m += method
+            methods.append(new_m)
+            
+        k = method[i]
+        method[i] = k - 1
+
+# Helper function that returns linear combinations that sum to the value.   
+def combo(arr, val):
+    combos = []
+    method = [0]*(arr[len(arr) - 1] + 1)
+    
+    methods = []
+    combos_helper(val, method, arr, methods)
+    
+    new_methods = []
+    good_coeffs = []
+    
+    for m in methods:
+        if not m in new_methods:
+            new_methods.append(m)
+    
+    for m in new_methods:
+        good_coeffs.append(m[arr[0]: arr[len(arr) - 1] + 1])
         
     for i in good_coeffs:
-        shares = ()
-    
+        to_add = []
+        
         for j in range(len(arr)):
-            shares += tuple(it.repeat(arr[j], i[j]))
+            to_add += list(it.repeat(arr[j], i[j]))
             
-        combos += (shares,)
-    
+        combos.append(to_add)
+        
     return combos
 
-# helper 
-def get_all_procs(s, fixed, combos):
-    fixed_shares = () # list that contains only the upper or lower share size
-    last = combos[len(combos) - 1]
-    
-    if sum(combos[0]) % combos[0][0] == 0:
-        fixed_shares = combos[0]
-    elif sum(last) % last[0] == 0:
-        fixed_shares = last
-    
-    shares = iter(it.repeat(fixed_shares, fixed))
-    
-    combos.remove(fixed_shares)
-    
-    all_procs = iter(it.product(combos, repeat = int((s - fixed))))
-    
-    return (all_procs, shares)
+def subtract(a, b):
+    for i in a:
+        if i in b:
+            b.remove(i)
 
 # input: muffins, students, fc fraction, number of "fixed" students
 def find_proc(m, s, fc, fixed):
-    whole = fc.denominator 
-    total = int(m*(whole/s)) # sum of shares of any student
-    interval = tuple(range(fc.numerator, whole - fc.numerator + 1))
-    combos = combo(interval, total) # lists that each sum to total
-    combos.sort()
+    whole = fc.denominator
+    total = m*(whole//s)
     
-    (all_procs, shares) = get_all_procs(s, fixed, combos) 
-    shares = tuple(shares)
-    combos = None
-     
-    while True:
-        try:
-            res = list(next(all_procs))
-            res += shares
-            flat_res = [val for sublist in res for val in sublist]
-            flat_res.sort()
-            
-            flag = True
-            
-            for i in range(len(flat_res)):
-                if flat_res[i] + flat_res[len(flat_res) - i - 1] != whole:
-                    flag = False
-                    
-            if flag == True:
-                return res
-        except StopIteration:
+    interval = []
+    for i in range(fc.numerator, whole - fc.numerator + 1):
+        interval.append(i)
+        
+    combos = combo(interval, total)
+    
+    del interval[0]
+    del interval[len(interval) - 1]
+    
+    fixed_shares = []
+    
+    for j in combos:
+        if sum(j) % j[0] == 0:
+            fixed_shares = j
             break
-
+        
+    all_fixed = list(it.repeat(fixed_shares, fixed))
+    flat_fixed = []
+    opp_flat_fixed = []
+    
+    for l in all_fixed:
+        flat_fixed += l
+        
+    for i in flat_fixed:
+        opp_flat_fixed.append(whole - i)
+        
+    length = 2*(m - len(flat_fixed))
+    pairs = []
+    
+    for i in range(len(interval)//2 + 1):
+        pair = []
+        
+        pair.append(interval[i])
+        pair.append(interval[len(interval) - i - 1])
+        pairs.append(pair)
+        
+    poss = symmetric_pairs(length, pairs, pairs)
+    
+    for i in poss:
+        i += opp_flat_fixed
+        i.sort()
+        
+    proc = []
+    
+    for i in poss:
+        proc = []
+        
+        while one_is_in(combos, i):
+            for j in range(len(combos)):
+                if set(combos[j]).issubset(set(i)):
+                    subtract(combos[j], i)
+                    proc.append(combos[j])
+        
+        if len(i) == 0:
+            proc += all_fixed
+            return proc
+        
+    return None
+        
 # Make proc for f(N*k+M, N) given procs for f(N*A+M, N) and f(N*B+M, N).
 # ex_procs is tuple of two example f(N*k+M, N) Proc instances
 # determine N, M, and ks
