@@ -3,8 +3,6 @@ import itertools as it
 import re
 import time
 
-# @author: Lexa
-
 class Proc:
     def __init__(self, m, s, text, numbers):
         self.m = m
